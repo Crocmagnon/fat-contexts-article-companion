@@ -11,9 +11,9 @@ import (
 )
 
 func main() {
-	shadow, fat := getData()
+	thin, fat, experiment := getData()
 	plot := charts.NewLine()
-	xAxis := make([]int, len(shadow))
+	xAxis := make([]int, len(thin))
 	for i := range xAxis {
 		xAxis[i] = i
 	}
@@ -25,8 +25,9 @@ func main() {
 
 	plot.
 		SetXAxis(xAxis).
-		AddSeries("Shadow", shadow).
-		AddSeries("Fat", fat)
+		AddSeries("Thin", thin).
+		AddSeries("Fat", fat).
+		AddSeries("Experiment", experiment)
 
 	f, err := os.Create("plot.html")
 	if err != nil {
@@ -38,9 +39,10 @@ func main() {
 	}
 }
 
-func getData() ([]opts.LineData, []opts.LineData) {
-	var shadow []opts.LineData
+func getData() ([]opts.LineData, []opts.LineData, []opts.LineData) {
+	var thin []opts.LineData
 	var fat []opts.LineData
+	var experiment []opts.LineData
 
 	f, err := os.Open("data")
 	if err != nil {
@@ -66,12 +68,14 @@ func getData() ([]opts.LineData, []opts.LineData) {
 		point := opts.LineData{Value: val, Name: "ns"}
 
 		switch series {
-		case "shadow":
-			shadow = append(shadow, point)
+		case "thin":
+			thin = append(thin, point)
 		case "fat":
 			fat = append(fat, point)
+		case "experiment":
+			experiment = append(experiment, point)
 		}
 	}
 
-	return shadow, fat
+	return thin, fat, experiment
 }

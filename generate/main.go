@@ -15,9 +15,13 @@ func main() {
 
 	// Setup the value we want to retrieve in each iteration
 	ctx := context.WithValue(context.Background(), key, "some-val")
-
 	fat(ctx, times)
-	shadow(ctx, times)
+
+	ctx = context.WithValue(context.Background(), key, "some-val")
+	thin(ctx, times)
+
+	ctx = context.WithValue(context.Background(), key, "some-val")
+	experiment(ctx, times)
 }
 
 func fat(ctx context.Context, times uint64) {
@@ -33,7 +37,7 @@ func fat(ctx context.Context, times uint64) {
 	}
 }
 
-func shadow(ctx context.Context, times uint64) {
+func thin(ctx context.Context, times uint64) {
 	for range times {
 		// shadow the context, each iteration creates a new one and it doesn't grow
 		ctx := contextWithRandom(ctx)
@@ -41,10 +45,33 @@ func shadow(ctx context.Context, times uint64) {
 		start := time.Now()
 		_ = ctx.Value(key)
 
-		fmt.Printf("shadow,%v\n", time.Since(start).Nanoseconds())
+		fmt.Printf("thin,%v\n", time.Since(start).Nanoseconds())
+	}
+}
+
+func experiment(ctx context.Context, times uint64) {
+	wrapper := something()
+	r := &R{ctx}
+	for range times {
+		wrapper(r)
+		start := time.Now()
+		_ = r.Ctx.Value(key)
+		fmt.Printf("experiment,%v\n", time.Since(start).Nanoseconds())
 	}
 }
 
 func contextWithRandom(ctx context.Context) context.Context {
 	return context.WithValue(ctx, "other_key", uuid.Must(uuid.NewV4()))
+}
+
+type R struct {
+	Ctx context.Context
+}
+
+func something() func(*R) {
+	return func(r *R) {
+		ctx := r.Ctx
+		ctx = contextWithRandom(ctx)
+		r.Ctx = ctx // triggered on this line
+	}
 }
